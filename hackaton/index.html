@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Song Rhythm Detector</title>
+    </head>
+    <body>
+        <input type="file" id="audioFile" accept="audio/*" />
+        <button onclick="analyzeRhythm()">Analyze Rhythm</button>
+
+        <script>
+            let audioContext;
+            let audioBuffer;
+
+            document.getElementById('audioFile').addEventListener('change', function (event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        const audioData = e.target.result;
+
+                        initializeAudioContext(audioData);
+                    };
+
+                    reader.readAsArrayBuffer(file);
+                }
+            });
+
+            function initializeAudioContext(audioData) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                audioContext.decodeAudioData(audioData, function (buffer) {
+                    audioBuffer = buffer;
+                });
+            }
+
+            function analyzeRhythm() {
+                if (!audioBuffer) {
+                    alert('Please choose an audio file first.');
+                    return;
+                }
+
+                const audioSource = audioContext.createBufferSource();
+                audioSource.buffer = audioBuffer;
+
+                const analyser = audioContext.createAnalyser();
+                analyser.fftSize = 32;
+
+                audioSource.connect(analyser);
+                analyser.connect(audioContext.destination);
+
+                audioSource.start();
+
+                const bufferLength = analyser.frequencyBinCount;
+                const dataArray = new Uint8Array(bufferLength);
+
+                function draw() {
+                    analyser.getByteFrequencyData(dataArray);
+
+                    // You can use dataArray to analyze the rhythm
+                    console.log(dataArray);
+
+                    requestAnimationFrame(draw);
+                }
+
+                draw();
+            }
+        </script>
+    </body>
+</html>
